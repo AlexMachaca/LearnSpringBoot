@@ -1,11 +1,16 @@
 package com.iis.app.business.person.Response;
 
 import java.util.Date;
+import java.util.List;
+
+import com.iis.app.business.ResponseGeneral;
 
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
-public class SoGetAll {
+@NoArgsConstructor
+public class SoGetAll extends ResponseGeneral<List<SoGetAll>> {
     public String idPerson;
     public String firstName;
     public String surName;

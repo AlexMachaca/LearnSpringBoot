@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -17,10 +18,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.iis.app.business.person.Response.SoGetAll;
+import com.iis.app.business.person.Response.SoInsertResponse;
 import com.iis.app.business.person.request.SoInsert;
 import com.iis.app.business.person.request.SoUpdate;
 import com.iis.app.dto.DtoPerson;
 import com.iis.app.service.PersonService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("person")
@@ -29,31 +33,44 @@ public class PersonController {
     private PersonService personService;
 
     @PostMapping(path = "insert", consumes = { "multipart/form-data" })
-    public ResponseEntity<Boolean> actionInsert(@ModelAttribute SoInsert soInsert) {
+    public ResponseEntity<SoInsertResponse> actionInsert(@Valid @ModelAttribute SoInsert soInsert,
+            BindingResult bindingResult) {
+        SoInsertResponse responseSoInsert = new SoInsertResponse();
         try {
+            if (bindingResult.hasErrors()) {
+                bindingResult.getAllErrors().forEach(error -> {
+                    responseSoInsert.addResponseMessage(error.getDefaultMessage());
+                });
+                return new ResponseEntity<>(responseSoInsert, HttpStatus.OK);
+            }
             DtoPerson dtoPerson = new DtoPerson();
 
             dtoPerson.setFirstName(soInsert.getFirstName());
             dtoPerson.setSurName(soInsert.getSurName());
             dtoPerson.setDni(soInsert.getDni());
-            dtoPerson.setGender(soInsert.isGender());
+            dtoPerson.setGender(soInsert.getGender());
             dtoPerson.setBirthDate(new SimpleDateFormat("yyyy-MM-dd").parse(soInsert.getBirthDate()));
 
             personService.insert(dtoPerson);
-        } catch (Exception e) {
-        }
-        return new ResponseEntity<>(true, HttpStatus.CREATED);
 
+            responseSoInsert.setType("succes");
+            responseSoInsert.addResponseMessage("Operación realizada correctamente.");
+
+            return new ResponseEntity<>(responseSoInsert, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(responseSoInsert, HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping("getall")
-    public ResponseEntity<List<SoGetAll>> actionGetAll() {
+    public ResponseEntity<SoGetAll> actionGetAll() {
+        SoGetAll responseGetAll = new SoGetAll();
         List<DtoPerson> listDtoPerson = personService.getAll();
 
-        List<SoGetAll> listSoPersonGet = new ArrayList<>();
+        responseGetAll.setDto(new ArrayList<>());
 
         for (DtoPerson dtoPerson : listDtoPerson) {
-            listSoPersonGet.add(new SoGetAll(
+            responseGetAll.getDto().add(new SoGetAll(
                     dtoPerson.getIdPerson(),
                     dtoPerson.getFirstName(),
                     dtoPerson.getSurName(),
@@ -61,8 +78,8 @@ public class PersonController {
                     dtoPerson.getGender(),
                     dtoPerson.getBirthDate()));
         }
-
-        return new ResponseEntity<>(listSoPersonGet, HttpStatus.OK);
+        responseGetAll.setType("succes");
+        return new ResponseEntity<>(responseGetAll, HttpStatus.OK);
     }
 
     // ELIMINAR
@@ -83,31 +100,8 @@ public class PersonController {
         }
     }
 
-    /*@PutMapping(path = "update/{id}")
-    public ResponseEntity<Boolean> actionUpdate(@PathVariable String id, @RequestBody SoInsert soUpdate) {
-        try {
-            DtoPerson dtoPerson = new DtoPerson();
-            dtoPerson.setIdPerson(id);
-
-            dtoPerson.setFirstName(soUpdate.getFirstName());
-            dtoPerson.setSurName(soUpdate.getSurName());
-            dtoPerson.setDni(soUpdate.getDni());
-            dtoPerson.setGender(soUpdate.isGender());
-            dtoPerson.setBirthDate(new SimpleDateFormat("yyyy-MM-dd").parse(soUpdate.getBirthDate()));
-
-            boolean isUpdate = personService.update(dtoPerson);
-            if (isUpdate) {
-                return new ResponseEntity<>(true, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }*/
-
-    @PostMapping(path = "update", consumes = {"multipart/form-data"})
-    public ResponseEntity<Boolean>actionUpdate(@ModelAttribute SoUpdate soUpdate){
+    @PostMapping(path = "update", consumes = { "multipart/form-data" })
+    public ResponseEntity<Boolean> actionUpdate(@Valid @ModelAttribute SoUpdate soUpdate) {
         try {
             DtoPerson dtoPerson = new DtoPerson();
 
@@ -115,11 +109,13 @@ public class PersonController {
             dtoPerson.setFirstName(soUpdate.getFirstName());
             dtoPerson.setSurName(soUpdate.getSurName());
             dtoPerson.setDni(soUpdate.getDni());
-            dtoPerson.setGender(soUpdate.isGender());
+            dtoPerson.setGender(soUpdate.getGender());
             dtoPerson.setBirthDate(new SimpleDateFormat("yyyy-MM-dd").parse(soUpdate.getBirthDate()));
 
             personService.update(dtoPerson);
         } catch (Exception e) {
+            System.err.println("Error al insertar persona: " + e.getMessage());
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(true, HttpStatus.OK);
     }
