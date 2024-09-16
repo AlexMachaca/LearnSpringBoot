@@ -4,24 +4,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
 //Tipos genericos <T>
-public class ResponseGeneral<T> {
+public class ResponseGeneral {
     private String type;
     private List<String> listMessage;
-    private T dto;
 
     public ResponseGeneral(){
-        this.type="Error";
+        this.type="error";
         this.listMessage=new ArrayList<>();
-
-        this.dto=null;
     }
 
     public void addResponseMessage(String message){
         this.listMessage.add(message);
     }
+
+    public void success() {
+		this.type = "success";
+	}
+
+	public void warning() {
+		this.type = "warning";
+	}
+
+	public void error() {
+		this.type = "error";
+	}
+
+	public void exception() {
+		this.type = "exception";
+	}
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -18,9 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.iis.app.business.office.request.SoInsertOffice;
 import com.iis.app.business.office.request.SoUpdateOffice;
+import com.iis.app.business.office.response.ResponseInsertO;
 import com.iis.app.business.office.response.SoGetAllOffice;
 import com.iis.app.dto.DtoOffice;
 import com.iis.app.service.OfficeService;
+
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -30,8 +34,15 @@ public class OfficeController {
     private OfficeService officeService;
 
     @PostMapping(path = "insert", consumes = { "multipart/form-data" })
-    public ResponseEntity<Boolean> actionInsert(@ModelAttribute SoInsertOffice soInsert) {
+    public ResponseEntity<ResponseInsertO> actionInsert(@Valid @ModelAttribute SoInsertOffice soInsert, BindingResult bindingResult) {
+        ResponseInsertO responseInsert=new ResponseInsertO();
         try {
+            if (bindingResult.hasErrors()) {
+                bindingResult.getAllErrors().forEach(error -> {
+                    responseInsert.addResponseMessage(error.getDefaultMessage());
+                });
+                return new ResponseEntity<>(responseInsert, HttpStatus.OK);
+            }
             DtoOffice dtoOffice = new DtoOffice();
 
             dtoOffice.setDescripcion(soInsert.getDescripcion());
@@ -40,9 +51,13 @@ public class OfficeController {
             dtoOffice.setFechaCreacion(new SimpleDateFormat("yyyy-MM-dd").parse(soInsert.getFechaCreacion()));
 
             officeService.insert(dtoOffice);
+            responseInsert.success();
+            responseInsert.addResponseMessage("Operación realizada correctamente.");
+            return new ResponseEntity<>(responseInsert, HttpStatus.CREATED);
         } catch (Exception e) {
+            System.out.println("El problema es: "+e);
+            return new ResponseEntity<>(responseInsert, HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(true, HttpStatus.CREATED);
 
     }
 

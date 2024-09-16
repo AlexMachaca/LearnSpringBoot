@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
 @NoArgsConstructor
-public class SoGetAll extends ResponseGeneral<List<SoGetAll>> {
+public class SoGetAll {
     public String idPerson;
     public String firstName;
     public String surName;
